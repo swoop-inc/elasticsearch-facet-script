@@ -43,6 +43,7 @@ public class ScriptFacetParamsTest extends AbstractNodesTests {
         .put("script.native.test_map.type", MapScriptFactory.class)
         .put("script.native.test_combine.type", CombineScriptFactory.class)
         .put("script.native.test_reduce.type", ReduceScriptFactory.class)
+        .put("cluster.name", createClusterName())
         .build();
     for (int i = 0; i < numberOfNodes(); i++) {
       startNode("node" + i, settings);

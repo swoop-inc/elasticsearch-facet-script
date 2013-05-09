@@ -19,8 +19,12 @@
 
 package org.elasticsearch.test.integration;
 
+import static org.elasticsearch.common.collect.Maps.newHashMap;
+import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;
+import static org.elasticsearch.common.settings.ImmutableSettings.Builder.EMPTY_SETTINGS;
+import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
+
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.collect.Maps;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.network.NetworkUtils;
@@ -29,11 +33,6 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.Node;
 
 import java.util.Map;
-
-import static org.elasticsearch.common.collect.Maps.newHashMap;
-import static org.elasticsearch.common.settings.ImmutableSettings.Builder.EMPTY_SETTINGS;
-import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;
-import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
 public abstract class AbstractNodesTests {
 
@@ -51,7 +50,7 @@ public abstract class AbstractNodesTests {
 	/**
 	 * Create a unique (or unique enough) cluster name, for testing.
 	 */
-	private static String createClusterName() {
+	protected static String createClusterName() {
 		try {
 			return "test-cluster-" + NetworkUtils.getLocalAddress().getHostName();
 		}
