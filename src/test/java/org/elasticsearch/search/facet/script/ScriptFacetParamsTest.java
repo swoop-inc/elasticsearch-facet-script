@@ -6,6 +6,7 @@ import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.collect.ImmutableMap;
+import org.elasticsearch.common.network.NetworkUtils;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -15,9 +16,9 @@ import org.elasticsearch.script.AbstractSearchScript;
 import org.elasticsearch.script.ExecutableScript;
 import org.elasticsearch.script.NativeScriptFactory;
 import org.elasticsearch.test.integration.AbstractNodesTests;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -132,6 +133,18 @@ public class ScriptFacetParamsTest extends AbstractNodesTests {
     return client("node0");
   }
   
+	/**
+	 * Create a unique (or unique enough) cluster name, for testing.
+	 */
+	protected static String createClusterName()
+	{
+		try {
+			return "test-cluster-" + NetworkUtils.getLocalAddress().getHostName();
+		}
+		catch (Exception e) {
+			return "test-cluster-" + Long.toString((long) (Math.random() * 1000000000L), 16);
+		}
+	}
   
   // Static classes with the factories and scripts
   // They set state in a shared context on their "run" methods
