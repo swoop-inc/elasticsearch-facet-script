@@ -1,0 +1,10 @@
+language: java
+
+jdk:
+  - oraclejdk7
+
+cache:
+  - $HOME/.m2
+
+script: mvn verify
+
