@@ -1,7 +1,5 @@
 package org.elasticsearch.search.facet.script;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
@@ -23,18 +21,20 @@ import org.junit.Test;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+
 public class ScriptFacetParamsTest extends AbstractNodesTests {
-  
+
   private static final Map<String, Object> CONTEXT = new HashMap<String, Object>();
 
   private final String INDEX = "test";
   private final String TYPE = "t";
-  
+
   private Client client;
-  
-  
+
+
   // ---------------- pre/postconditions ----------------
-  
+
   @BeforeClass
   public void createNodes() throws Exception {
     Settings settings = ImmutableSettings.settingsBuilder()
@@ -45,6 +45,7 @@ public class ScriptFacetParamsTest extends AbstractNodesTests {
         .put("script.native.test_combine.type", CombineScriptFactory.class)
         .put("script.native.test_reduce.type", ReduceScriptFactory.class)
         .put("cluster.name", createClusterName())
+        .put("script.disable_dynamic", false)
         .build();
     for (int i = 0; i < numberOfNodes(); i++) {
       startNode("node" + i, settings);
@@ -58,49 +59,49 @@ public class ScriptFacetParamsTest extends AbstractNodesTests {
     closeAllNodes();
   }
 
-  
-  
+
+
   // ---------------- tests ----------------
-  
+
   @SuppressWarnings("unchecked")
   @Test
   public void testInitParams() throws Exception {
     prepareIndexData(getClient());
-    
+
     // query
     QueryBuilder queryBuilder = QueryBuilders.matchAllQuery();
-    
+
     ScriptFacetBuilder facetBuilder = new ScriptFacetBuilder("test_facet")
       .initScript("test_init").mapScript("test_map")
       .combineScript("test_combine").reduceScript("test_reduce")
       .lang("native").param("p1", "val1").reduceParam("p2", "val2");
-    
+
     SearchRequestBuilder searchRequestBuilder = getClient().prepareSearch(INDEX)
         .setSearchType(SearchType.COUNT)
         .addFacet(facetBuilder)
         .setQuery(queryBuilder);
-    
+
     searchRequestBuilder.execute().actionGet();
-    
+
     // assertions
     Map<String, Object> initMap = (Map<String, Object>) CONTEXT.get("init");
     assertThat("init content", initMap.get("p1").equals("val1"));
-    
+
     Map<String, Object> mapMap = (Map<String, Object>) CONTEXT.get("map");
     assertThat("map content", mapMap.get("p1").equals("val1"));
-    
+
     Map<String, Object> combineMap = (Map<String, Object>) CONTEXT.get("combine");
     assertThat("combine content", combineMap.get("p1").equals("val1"));
-    
+
     Map<String, Object> reduceMap = (Map<String, Object>) CONTEXT.get("reduce");
     assertThat("reduce content", reduceMap.get("p2").equals("val2"));
   }
-  
-  
+
+
   // ---------------- helper methods ----------------
-  
+
   private void prepareIndexData(Client client) {
-    
+
     try {
       client.admin().indices().prepareDelete("test").execute().actionGet();
     } catch (Exception e) {
@@ -108,7 +109,7 @@ public class ScriptFacetParamsTest extends AbstractNodesTests {
     }
     client.admin().indices().prepareCreate("test").execute().actionGet();
     client.admin().cluster().prepareHealth().setWaitForGreenStatus().execute().actionGet();
-    
+
     // add data
     client.prepareIndex(INDEX, TYPE, "1").setSource(ImmutableMap.<String, Object>of("field1", "valueA")).execute().actionGet();
     client.prepareIndex(INDEX, TYPE, "2").setSource(ImmutableMap.<String, Object>of("field1", "valueA")).execute().actionGet();
@@ -116,11 +117,12 @@ public class ScriptFacetParamsTest extends AbstractNodesTests {
     client.prepareIndex(INDEX, TYPE, "4").setSource(ImmutableMap.<String, Object>of("field1", "valueB")).execute().actionGet();
     client.prepareIndex(INDEX, TYPE, "5").setSource(ImmutableMap.<String, Object>of("field1", "valueB")).execute().actionGet();
     client.prepareIndex(INDEX, TYPE, "6").setSource(ImmutableMap.<String, Object>of("field1", "valueC")).execute().actionGet();
-    
+
     // flush and refresh
-    client.admin().indices().prepareFlush().setRefresh(true).execute().actionGet();
+    client.admin().indices().prepareFlush().setFull(true).execute().actionGet();
+    client.admin().indices().prepareRefresh().execute().actionGet();
   }
-  
+
   protected int numberOfShards() {
     return 5;
   }
@@ -132,7 +134,7 @@ public class ScriptFacetParamsTest extends AbstractNodesTests {
   protected Client getClient() {
     return client("node0");
   }
-  
+
 	/**
 	 * Create a unique (or unique enough) cluster name, for testing.
 	 */
@@ -145,11 +147,11 @@ public class ScriptFacetParamsTest extends AbstractNodesTests {
 			return "test-cluster-" + Long.toString((long) (Math.random() * 1000000000L), 16);
 		}
 	}
-  
+
   // Static classes with the factories and scripts
   // They set state in a shared context on their "run" methods
   // which are verified as assertions by the test
-  
+
   static class InitScriptFactory implements NativeScriptFactory {
     @Override
     public ExecutableScript newScript(final Map<String, Object> params) {
@@ -162,7 +164,7 @@ public class ScriptFacetParamsTest extends AbstractNodesTests {
       };
     }
   }
-  
+
   static class MapScriptFactory implements NativeScriptFactory {
     @Override
     public ExecutableScript newScript(final Map<String, Object> params) {
@@ -175,7 +177,7 @@ public class ScriptFacetParamsTest extends AbstractNodesTests {
       };
     }
   }
-  
+
   static class CombineScriptFactory implements NativeScriptFactory {
     @Override
     public ExecutableScript newScript(final Map<String, Object> params) {
@@ -188,7 +190,7 @@ public class ScriptFacetParamsTest extends AbstractNodesTests {
       };
     }
   }
-  
+
   static class ReduceScriptFactory implements NativeScriptFactory {
     @Override
     public ExecutableScript newScript(final Map<String, Object> params) {

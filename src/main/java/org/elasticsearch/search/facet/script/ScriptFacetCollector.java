@@ -16,8 +16,6 @@
 
 package org.elasticsearch.search.facet.script;
 
-import static org.elasticsearch.common.collect.Maps.newHashMap;
-
 import org.apache.lucene.index.AtomicReaderContext;
 import org.apache.lucene.search.Scorer;
 import org.elasticsearch.client.Client;
@@ -30,6 +28,8 @@ import org.elasticsearch.search.internal.SearchContext;
 
 import java.io.IOException;
 import java.util.Map;
+
+import static org.elasticsearch.common.collect.Maps.newHashMap;
 
 /**
  *
@@ -73,11 +73,11 @@ public class ScriptFacetCollector extends FacetExecutor {
         this.params.put("_ctx", context);
         this.params.put("_client", client);
         if (initScript != null) {
-            scriptService.executable(scriptLang, initScript, this.params).run();
+            scriptService.executable(scriptLang, initScript, ScriptService.ScriptType.INLINE, this.params).run();
         }
-        this.mapScript = scriptService.search(context.lookup(), scriptLang, mapScript, this.params);
+        this.mapScript = scriptService.search(context.lookup(), scriptLang, mapScript, ScriptService.ScriptType.INLINE, this.params);
         if (combineScript != null) {
-            this.combineScript = scriptService.executable(scriptLang, combineScript, this.params);
+            this.combineScript = scriptService.executable(scriptLang, combineScript, ScriptService.ScriptType.INLINE, this.params);
         } else {
             this.combineScript = null;
         }

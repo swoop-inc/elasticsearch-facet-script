@@ -39,7 +39,12 @@ import static org.hamcrest.Matchers.equalTo;
 public class SimpleScriptFacetTests extends AbstractNodesTests {
 
     public void beforeClass() throws Exception {
-        Settings settings = ImmutableSettings.settingsBuilder().put("index.number_of_shards", numberOfShards()).put("index.number_of_replicas", 0).build();
+        Settings settings = ImmutableSettings.settingsBuilder()
+                .put("index.number_of_shards", numberOfShards())
+                .put("index.number_of_replicas", 0)
+                .put("script.disable_dynamic", false)
+                .build();
+
         for (int i = 0; i < numberOfNodes(); i++) {
             startNode("node" + i, settings);
         }
@@ -84,7 +89,8 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
                     .endObject()).execute().actionGet();
         }
 
-        client().admin().indices().prepareFlush().setRefresh(true).execute().actionGet();
+        client().admin().indices().prepareFlush().setFull(true).execute().actionGet();
+        client().admin().indices().prepareRefresh().execute().actionGet();
 
         for (int i = 0; i < 5; i++) {
             client().prepareIndex("test", "type1").setSource(jsonBuilder().startObject()
@@ -171,7 +177,8 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
                     .endObject()).execute().actionGet();
         }
 
-        client().admin().indices().prepareFlush().setRefresh(true).execute().actionGet();
+        client().admin().indices().prepareFlush().setFull(true).execute().actionGet();
+        client().admin().indices().prepareRefresh().execute().actionGet();
 
         for (int i = 0; i < 5; i++) {
             client().prepareIndex("test1", "type1").setSource(jsonBuilder().startObject()
@@ -196,9 +203,9 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
                         .startObject("script")
                         .field("init_script", "index = _ctx.request().index();")
                         .field("map_script", "" +
-                                "uid = doc._uid.value;" +
-                                "id = org.elasticsearch.index.mapper.Uid.idFromUid(uid);" +
-                                "type = org.elasticsearch.index.mapper.Uid.typeFromUid(uid);" +
+                                "uid = org.elasticsearch.index.mapper.Uid.createUid(doc._uid.value);" +
+                                "id = uid.id();" +
+                                "type = uid.type();" +
                                 "if (!_source.isEmpty()) {" +
                                 "  modified = true;" +
                                 "  map = _source.source();" +
@@ -271,8 +278,7 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
                 .field("message", "IJKLMNOP")
                 .endObject()).execute().actionGet();
 
-        client().admin().indices().prepareFlush().setRefresh(true).execute().actionGet();
-
+        client().admin().indices().prepareFlush().setFull(true).execute().actionGet();
         client().admin().indices().prepareRefresh().execute().actionGet();
 
         SearchResponse searchResponse = client().prepareSearch()
@@ -328,8 +334,7 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
                 .field("message", "foo bar")
                 .endObject()).execute().actionGet();
 
-        client().admin().indices().prepareFlush().setRefresh(true).execute().actionGet();
-
+        client().admin().indices().prepareFlush().setFull(true).execute().actionGet();
         client().admin().indices().prepareRefresh().execute().actionGet();
 
         SearchResponse searchResponse = client().prepareSearch()
@@ -339,7 +344,7 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
                         .startObject("facets")
                         .startObject("facet1")
                         .startObject("script")
-                        .field("map_script", "_client.prepareUpdate(\"test1\", \"type1\", org.elasticsearch.index.mapper.Uid.idFromUid(doc['_uid'].value)).setDoc(\"{\\\"message\\\": \\\"baz\\\"}\").execute().actionGet()")
+                        .field("map_script", "_client.prepareUpdate(\"test1\", \"type1\", org.elasticsearch.index.mapper.Uid.createUid(doc['_uid'].value).id()).setDoc(\"{\\\"message\\\": \\\"baz\\\"}\").execute().actionGet()")
                         .endObject()
                         .endObject()
                         .endObject()
@@ -378,8 +383,7 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
                     .field("num", i)
                     .endObject()).execute().actionGet();
         }
-        client().admin().indices().prepareFlush().setRefresh(true).execute().actionGet();
-
+        client().admin().indices().prepareFlush().setFull(true).execute().actionGet();
         client().admin().indices().prepareRefresh().execute().actionGet();
 
         SearchResponse searchResponse = client().prepareSearch()

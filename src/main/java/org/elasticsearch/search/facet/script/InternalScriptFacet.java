@@ -96,12 +96,17 @@ public class InternalScriptFacet extends InternalFacet implements ScriptFacet {
             }
             params.put("facets", facetObjects);
             params.put("_client", client);
-            ExecutableScript script = scriptService.executable(firstFacet.scriptLang(), firstFacet.reduceScript(), params);
+
+            ExecutableScript script = scriptService.executable(
+                    firstFacet.scriptLang(), firstFacet.reduceScript(), ScriptService.ScriptType.INLINE, params);
+
             facet = script.run();
         } else {
             facet = facetObjects;
         }
-        return new InternalScriptFacet(firstFacet.getName(), facet, firstFacet.scriptLang(), firstFacet.reduceScript(), firstFacet.reduceParams(), scriptService, client);
+        return new InternalScriptFacet(
+                firstFacet.getName(), facet, firstFacet.scriptLang(),
+                firstFacet.reduceScript(), firstFacet.reduceParams(), scriptService, client);
     }
 
     @Override
